@@ -1,0 +1,31 @@
+customHeaders:
+  # Security headers for all routes (Amplify applies these to matching paths)
+  - pattern: '**/*'
+    headers:
+      - key: 'X-Content-Type-Options'
+        value: 'nosniff'
+      - key: 'X-Frame-Options'
+        value: 'SAMEORIGIN'
+      - key: 'Referrer-Policy'
+        value: 'strict-origin-when-cross-origin'
+      - key: 'Permissions-Policy'
+        value: 'geolocation=(), microphone=(), camera=()'
+
+  # PWA files: always revalidate so updates propagate immediately
+  - pattern: '/sw.js'
+    headers:
+      - key: 'Cache-Control'
+        value: 'no-store'
+  - pattern: '/manifest.webmanifest'
+    headers:
+      - key: 'Cache-Control'
+        value: 'no-store'
+  - pattern: '/offline.html'
+    headers:
+      - key: 'Cache-Control'
+        value: 'no-store'
+
+  # NOTE:
+  # We intentionally do NOT override Cache-Control for HTML/SSR routes here.
+  # Next.js already sends no-store for these pages in this starter.
+  # Amplify honors origin Cache-Control unless you override it.
