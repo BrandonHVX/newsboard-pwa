@@ -80,16 +80,16 @@ export function InstallPrompt() {
           </button>
 
           <div className="flex items-start gap-4">
-            <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-accent flex items-center justify-center shadow-md">
-              <span className="text-white font-serif font-bold text-xl">NB</span>
+            <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-[#0b0b0c] flex items-center justify-center shadow-md">
+              <span className="text-white font-serif font-bold text-lg">HS</span>
             </div>
 
             <div className="flex-1 pr-6">
               <h3 className="font-serif font-bold text-lg text-gray-900 leading-tight">
-                Add NewsBoard to Home Screen
+                Get Heavy Status
               </h3>
               <p className="text-sm text-gray-600 mt-1">
-                Get instant access to breaking news with our app-like experience.
+                Install our app for instant access to breaking news and live updates.
               </p>
             </div>
           </div>
@@ -125,7 +125,7 @@ export function InstallPrompt() {
           ) : (
             <button
               onClick={handleInstall}
-              className="mt-4 w-full py-3 bg-accent text-white font-semibold rounded-xl hover:bg-accent/90 transition-colors"
+              className="mt-4 w-full py-3 bg-[#0b0b0c] text-white font-semibold rounded-xl hover:bg-[#333] transition-colors"
             >
               Install App
             </button>
