@@ -1,26 +1,33 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Share, Plus } from 'lucide-react';
+import { X, Share, Plus, Download, Smartphone } from 'lucide-react';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
+type DeviceType = 'ios' | 'android' | 'desktop';
+
 export function InstallPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
-  const [isIOS, setIsIOS] = useState(false);
+  const [deviceType, setDeviceType] = useState<DeviceType>('desktop');
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
 
   useEffect(() => {
-    const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as unknown as { MSStream?: unknown }).MSStream;
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+    const ua = navigator.userAgent;
+    const isIOSDevice = /iPad|iPhone|iPod/.test(ua) && !(window as unknown as { MSStream?: unknown }).MSStream;
+    const isAndroidDevice = /Android/i.test(ua);
+    const isMobile = isIOSDevice || isAndroidDevice;
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
                          (navigator as unknown as { standalone?: boolean }).standalone === true;
-    
-    setIsIOS(isIOSDevice);
 
-    if (isStandalone) {
+    if (isIOSDevice) setDeviceType('ios');
+    else if (isAndroidDevice) setDeviceType('android');
+    else setDeviceType('desktop');
+
+    if (isStandalone || !isMobile) {
       return;
     }
 
@@ -69,14 +76,14 @@ export function InstallPrompt() {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-[9999] animate-slide-up">
-      <div className="mx-4 mb-4 bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
-        <div className="relative p-4">
+      <div className="mx-4 mb-4 bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden max-w-md md:mx-auto">
+        <div className="relative p-5">
           <button
             onClick={handleDismiss}
-            className="absolute top-3 right-3 p-1 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+            className="absolute top-3 right-3 p-1.5 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
             aria-label="Dismiss"
           >
-            <X className="w-5 h-5 text-gray-500" />
+            <X className="w-4 h-4 text-gray-500" />
           </button>
 
           <div className="flex items-start gap-4">
@@ -86,54 +93,52 @@ export function InstallPrompt() {
 
             <div className="flex-1 pr-6">
               <h3 className="font-serif font-bold text-lg text-gray-900 leading-tight">
-                Get Heavy Status
+                Add Heavy Status to Home Screen
               </h3>
-              <p className="text-sm text-gray-600 mt-1">
-                Install our app for instant access to breaking news and live updates.
+              <p className="text-sm text-gray-500 mt-1">
+                Get the app-like experience with faster access and offline support.
               </p>
             </div>
           </div>
 
-          {isIOS ? (
+          {deviceType === 'ios' ? (
             <div className="mt-4 bg-gray-50 rounded-xl p-4">
-              <p className="text-sm text-gray-700 font-medium mb-3">To install:</p>
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center">
-                    <span className="text-accent font-bold text-sm">1</span>
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
+                    <Share className="w-4 h-4 text-blue-500" />
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <span>Tap the</span>
-                    <Share className="w-5 h-5 text-blue-500" />
-                    <span>Share button</span>
-                  </div>
+                  <p className="text-sm text-gray-700">
+                    Tap the <strong>Share</strong> button in Safari&apos;s toolbar
+                  </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center">
-                    <span className="text-accent font-bold text-sm">2</span>
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
+                    <Plus className="w-4 h-4 text-blue-500" />
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <span>Tap</span>
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white rounded border border-gray-200">
-                      <Plus className="w-4 h-4" />
-                      <span>Add to Home Screen</span>
-                    </span>
+                  <p className="text-sm text-gray-700">
+                    Scroll down and tap <strong>&quot;Add to Home Screen&quot;</strong>
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
+                    <Smartphone className="w-4 h-4 text-blue-500" />
                   </div>
+                  <p className="text-sm text-gray-700">
+                    Tap <strong>&quot;Add&quot;</strong> to install the app
+                  </p>
                 </div>
               </div>
             </div>
           ) : (
             <button
               onClick={handleInstall}
-              className="mt-4 w-full py-3 bg-[#0b0b0c] text-white font-semibold rounded-xl hover:bg-[#333] transition-colors"
+              className="mt-4 w-full py-3.5 bg-[#0b0b0c] text-white font-semibold rounded-xl hover:bg-[#333] transition-colors flex items-center justify-center gap-2"
             >
-              Install App
+              <Download className="w-5 h-5" />
+              <span>Add to Home Screen</span>
             </button>
           )}
-        </div>
-
-        <div className="h-1 bg-gray-100">
-          <div className="h-full w-12 mx-auto bg-gray-300 rounded-full" />
         </div>
       </div>
     </div>
