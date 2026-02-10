@@ -7,6 +7,7 @@ declare global {
   interface Window {
     OneSignalDeferred?: Array<(oneSignal: OneSignalType) => void>;
     OneSignal?: OneSignalType;
+    __oneSignalReady?: boolean;
   }
 }
 
@@ -29,15 +30,13 @@ interface OneSignalType {
 export function NotificationPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [oneSignalReady, setOneSignalReady] = useState(false);
 
-  const checkAndShowPrompt = useCallback(() => {
+  const shouldShowPrompt = useCallback(() => {
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
                          (navigator as unknown as { standalone?: boolean }).standalone === true;
 
     const ua = navigator.userAgent;
     const isMobile = /iPad|iPhone|iPod|Android/i.test(ua);
-    const isDesktop = !isMobile;
 
     if (isMobile && !isStandalone) {
       return false;
@@ -52,8 +51,7 @@ export function NotificationPrompt() {
       }
     }
 
-    const notificationPromptAccepted = localStorage.getItem('notificationPromptAccepted');
-    if (notificationPromptAccepted) {
+    if (localStorage.getItem('notificationPromptAccepted')) {
       return false;
     }
 
@@ -69,41 +67,23 @@ export function NotificationPrompt() {
   }, []);
 
   useEffect(() => {
-    if (!checkAndShowPrompt()) {
-      return;
-    }
+    if (!shouldShowPrompt()) return;
 
-    const oneSignalAppId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID;
+    const timer = setTimeout(() => {
+      if (shouldShowPrompt()) {
+        setShowPrompt(true);
+      }
+    }, 3000);
 
-    if (oneSignalAppId && window.OneSignalDeferred) {
-      window.OneSignalDeferred.push((OneSignal) => {
-        const isPushSupported = OneSignal.Notifications?.isPushSupported?.() ?? false;
-
-        if (!isPushSupported) {
-          return;
-        }
-
-        if (OneSignal.Notifications.permission || OneSignal.User?.PushSubscription?.optedIn) {
-          return;
-        }
-
-        setOneSignalReady(true);
-        setTimeout(() => setShowPrompt(true), 3000);
-      });
-    } else {
-      setTimeout(() => setShowPrompt(true), 3000);
-    }
-  }, [checkAndShowPrompt]);
+    return () => clearTimeout(timer);
+  }, [shouldShowPrompt]);
 
   const handleEnableNotifications = async () => {
     setIsLoading(true);
 
     try {
-      const oneSignalAppId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID;
-
-      if (oneSignalAppId && window.OneSignal && oneSignalReady) {
+      if (window.__oneSignalReady && window.OneSignal) {
         await window.OneSignal.Notifications.requestPermission();
-
         if (window.OneSignal.Notifications.permission) {
           try {
             await window.OneSignal.User.PushSubscription.optIn();
@@ -118,7 +98,15 @@ export function NotificationPrompt() {
       setShowPrompt(false);
     } catch (error) {
       console.error('Error requesting notification permission:', error);
-      localStorage.setItem('notificationPromptDismissed', Date.now().toString());
+
+      try {
+        if ('Notification' in window) {
+          await Notification.requestPermission();
+          localStorage.setItem('notificationPromptAccepted', 'true');
+        }
+      } catch {
+      }
+
       setShowPrompt(false);
     } finally {
       setIsLoading(false);
